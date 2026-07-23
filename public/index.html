@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>HNL Hi-Tech • FSR</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH SCREEN (signup / login)
+============================================================ -->
+<div class="wrap" id="authWrap" style="max-width:400px; padding-top:8vh;">
+    <div class="card animate-in">
+        <div class="auth-logo">
+            <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+            <h1>HNL <span>Hi-Tech</span></h1>
+            <p id="authSubtitle">Loading...</p>
+        </div>
+
+        <div class="auth-error" id="authError"></div>
+
+        <form id="authForm">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="authUsername" placeholder="e.g. muzammil" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="authSubmitBtn">
+                <i class="fas fa-right-to-bracket"></i> <span id="authSubmitLabel">Login</span>
+            </button>
+        </form>
+
+        <div class="auth-toggle" id="authToggle"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD (shown after login)
+============================================================ -->
+<div class="app hidden" id="dashWrap">
+
+    <!-- Sticky top bar: brand + live connection pulse -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+            <h1>HNL <span>Hi-Tech</span></h1>
+        </div>
+        <span class="status-badge" id="statusBadge"><i class="pulse-dot"></i>Online</span>
+    </div>
+
+    <!-- ============================================================
+         TAB: CONNECT (QR linking + status)
+    ============================================================ -->
+    <section class="tab-panel active" data-panel="connect">
+        <div class="card qr-section animate-in d1" id="qrSection">
+            <div class="section-title"><i class="fas fa-qrcode"></i> Link WhatsApp</div>
+            <div style="text-align:center;">
+                <div class="qr-wrapper">
+                    <img id="qrImage" style="display:none;">
+                    <div class="placeholder" id="qrPlaceholder"><i class="fas fa-qrcode"></i><span>Waiting...</span></div>
+                </div>
+                <div class="qr-status" id="qrStatus">⏳ Generating QR...</div>
+                <div class="qr-hint" id="qrHint"></div>
+            </div>
+        </div>
+
+        <div class="card animate-in d2">
+            <div class="section-title"><i class="fas fa-circle-info"></i> How to link</div>
+            <ol class="steps-list">
+                <li>Open WhatsApp on your phone</li>
+                <li>Go to <b>Settings → Linked Devices</b></li>
+                <li>Tap <b>Link a Device</b> and scan the code above</li>
+            </ol>
+        </div>
+
+        <div class="card animate-in d3">
+            <div class="info-grid">
+                <div class="info-card"><div class="label">Bot Status</div><div class="value" id="botStatus">-</div></div>
+                <div class="info-card"><div class="label">Database</div><div class="value" id="dbStatus">-</div></div>
+                <div class="info-card"><div class="label">Uptime</div><div class="value" id="uptimeDisplay">-</div></div>
+                <div class="info-card"><div class="label">Session</div><div class="value" id="sessionDisplay" style="font-size:13px;">-</div></div>
+            </div>
+            <div style="height:14px"></div>
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="refreshStatus()"><i class="fas fa-rotate"></i> Refresh</button>
+                <button class="btn btn-primary" id="restartBtn" onclick="restartBot()"><i class="fas fa-power-off"></i> Restart</button>
+            </div>
+            <div style="height:10px"></div>
+            <button class="btn btn-danger" onclick="logoutWA()"><i class="fas fa-plug-circle-xmark"></i> Disconnect WhatsApp</button>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         TAB: FSR (Field Service Report form)
+    ============================================================ -->
+    <section class="tab-panel" data-panel="fsr">
+
+        <div class="card animate-in d1">
+            <div class="section-title"><i class="fas fa-user"></i> Engineer Details</div>
+            <div class="field">
+                <label>Name</label>
+                <input type="text" id="fsrName" placeholder="e.g. Muhammad Muzammil">
+            </div>
+            <div class="field">
+                <label>Region</label>
+                <select id="fsrRegion">
+                    <option value="Bahawalpur 1">Bahawalpur 1</option>
+                    <option value="Bahawalpur 2">Bahawalpur 2</option>
+                    <option value="manual">Enter Manually…</option>
+                </select>
+            </div>
+            <div class="field hidden" id="fsrRegionManualWrap">
+                <label>Region (manual)</label>
+                <input type="text" id="fsrRegionManual" placeholder="Type region name">
+            </div>
+            <div class="field">
+                <label>Site ID <span class="hint-inline">(6 characters, e.g. MBW001)</span></label>
+                <input type="text" id="fsrSiteId" maxlength="6" placeholder="MBW001" style="text-transform:uppercase; letter-spacing:1.5px; font-weight:700;">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Date</label>
+                <input type="date" id="fsrDate">
+            </div>
+        </div>
+
+        <div class="card animate-in d2">
+            <div class="section-title"><i class="fas fa-oil-can"></i> Engine Oil</div>
+            <div class="pill-group" id="engineOilGroup">
+                <button type="button" class="pill" data-value="6">6 L</button>
+                <button type="button" class="pill" data-value="7">7 L</button>
+                <button type="button" class="pill" data-value="8">8 L</button>
+                <button type="button" class="pill" data-value="9">9 L</button>
+                <button type="button" class="pill" data-value="10">10 L</button>
+                <button type="button" class="pill" data-value="">No Oil Change</button>
+                <button type="button" class="pill" data-value="manual">Enter Manually</button>
+            </div>
+            <div class="field hidden" id="engineOilManualWrap" style="margin-top:10px;">
+                <input type="text" inputmode="numeric" id="engineOilManual" placeholder="Enter litres (numbers only)">
+            </div>
+        </div>
+
+        <div class="card animate-in d2">
+            <div class="section-title"><i class="fas fa-filter"></i> Oil Filter</div>
+            <div class="pill-group" data-select-group="oilFilter">
+                <button type="button" class="pill active" data-value="none">No Change</button>
+                <button type="button" class="pill" data-value="408">Oil Filter 408</button>
+                <button type="button" class="pill" data-value="409">Oil Filter 409</button>
+            </div>
+        </div>
+
+        <div class="card animate-in d3">
+            <div class="section-title"><i class="fas fa-filter"></i> Fuel Filter</div>
+            <div class="pill-group" data-select-group="fuelFilter">
+                <button type="button" class="pill active" data-value="none">No Change</button>
+                <button type="button" class="pill" data-value="117">Fuel Filter 117</button>
+                <button type="button" class="pill" data-value="118">Fuel Filter 118</button>
+            </div>
+        </div>
+
+        <div class="card animate-in d3">
+            <div class="section-title"><i class="fas fa-wind"></i> Air Filter</div>
+            <div class="pill-group" data-select-group="airFilter">
+                <button type="button" class="pill active" data-value="none">No Change</button>
+                <button type="button" class="pill" data-value="205">Air Filter 205</button>
+                <button type="button" class="pill" data-value="026">Air Filter 026</button>
+            </div>
+        </div>
+
+        <div class="card animate-in d4">
+            <div class="section-title"><i class="fas fa-droplet"></i> Radiator Coolant &amp; Silicon</div>
+            <div class="field">
+                <label>Radiator Coolant (ML)</label>
+                <input type="text" inputmode="numeric" id="fsrCoolant" placeholder="Leave empty if not used">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Silicon</label>
+                <input type="text" inputmode="numeric" id="fsrSilicon" placeholder="Leave empty if not used">
+            </div>
+        </div>
+
+        <div class="card animate-in d4">
+            <div class="section-title"><i class="fas fa-broom"></i> Cotton Waste &amp; Consumables</div>
+            <div class="field">
+                <label>Cotton Waste (KG)</label>
+                <input type="text" inputmode="numeric" id="fsrCottonWaste" placeholder="Leave empty if not used">
+            </div>
+            <div class="field">
+                <label>PVC Tape (pieces)</label>
+                <input type="text" inputmode="numeric" id="fsrPvcTape" placeholder="Leave empty if not used">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Cable Tie (pieces)</label>
+                <input type="text" inputmode="numeric" id="fsrCableTie" placeholder="Leave empty if not used">
+            </div>
+        </div>
+
+        <div class="card animate-in d5">
+            <div class="section-title"><i class="fas fa-boxes-stacked"></i> Other Store Items</div>
+            <p class="hint-text">Anything not listed above — add as many as you need.</p>
+            <div class="item-list" id="manualItemsList"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow('manualItemsList')"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+
+        <div class="card animate-in d5">
+            <div class="section-title"><i class="fas fa-screwdriver-wrench"></i> Service Items</div>
+            <p class="hint-text">Any service work carried out on this visit.</p>
+            <div class="item-list" id="serviceItemsList"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow('serviceItemsList')"><i class="fas fa-plus"></i> Add Service Item</button>
+        </div>
+
+        <button class="btn btn-primary" onclick="submitFsr()" id="fsrSubmitBtn"><i class="fas fa-paper-plane"></i> Submit FSR</button>
+    </section>
+
+    <!-- ============================================================
+         TAB: ACCOUNT
+    ============================================================ -->
+    <section class="tab-panel" data-panel="account">
+        <div class="card animate-in d1">
+            <div class="section-title"><i class="fas fa-user"></i> Signed in as</div>
+            <div class="account-row">
+                <div class="account-avatar"><i class="fas fa-user"></i></div>
+                <div class="account-name" id="accountUsername">-</div>
+            </div>
+            <button class="btn btn-danger" onclick="dashLogout()"><i class="fas fa-right-from-bracket"></i> Log out</button>
+        </div>
+
+        <div class="card animate-in d2">
+            <div class="section-title"><i class="fas fa-users-rectangle"></i> FSR WhatsApp Group</div>
+            <p class="hint-text">Submitted FSR reports are sent to this group. Send <b>!gjid</b> to the linked WhatsApp number from any chat to list your groups and their IDs, then paste the right one below.</p>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Group JID</label>
+                <input type="text" id="fsrGroupJid" placeholder="12036xxxxxxxx-xxxxxxxxxx@g.us">
+            </div>
+            <button class="btn btn-primary" onclick="saveFsrConfig()" id="saveFsrConfigBtn"><i class="fas fa-floppy-disk"></i> Save Group</button>
+        </div>
+
+        <div class="footer-note">HNL Hi-Tech (Pvt) Ltd · FSR System</div>
+    </section>
+
+    <!-- Fixed bottom navigation -->
+    <nav class="tabbar">
+        <button class="tab-btn active" data-tab="connect" onclick="switchTab('connect')"><i class="fas fa-qrcode"></i><span>Connect</span></button>
+        <button class="tab-btn" data-tab="fsr" onclick="switchTab('fsr')"><i class="fas fa-clipboard-list"></i><span>FSR</span></button>
+        <button class="tab-btn" data-tab="account" onclick="switchTab('account')"><i class="fas fa-user"></i><span>Account</span></button>
+    </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
