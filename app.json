@@ -1,0 +1,50 @@
+{
+  "name": "HNL-Hi-Tech-FSR",
+  "description": "HNL Hi-Tech (Pvt) Ltd Field Service Report (FSR) bot — a WhatsApp-connected dashboard where engineers submit a site visit form that gets posted straight to a WhatsApp group.",
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "fsr",
+    "mongodb",
+    "nodejs"
+  ],
+  "website": "https://github.com/mrwasif-dev/Muzammil-MD-V3",
+  "repository": "https://github.com/mrwasif-dev/Muzammil-MD-V3",
+  "success_url": "/",
+  "stack": "heroku-22",
+  "env": {
+    "SESSION_ID": {
+      "description": "Optional fixed session id. Leave blank to pair a fresh session by scanning the QR code from the web dashboard.",
+      "required": false
+    },
+    "MONGODB_URI": {
+      "description": "MongoDB connection string used to store the session, dashboard login and FSR group settings (e.g. from MongoDB Atlas).",
+      "required": true
+    },
+    "COMPANY_NAME": {
+      "description": "Optional. Company name shown at the top of every FSR report. Defaults to \"HNL Hi-Tech (Pvt) Ltd\".",
+      "required": false
+    },
+    "FSR_GROUP_JID": {
+      "description": "Optional fallback WhatsApp group JID that FSR reports are sent to (the dashboard's Account tab setting takes priority once saved).",
+      "required": false
+    },
+    "JWT_SECRET": {
+      "description": "Secret used to sign dashboard login sessions. Set a long random value.",
+      "required": false,
+      "generator": "secret"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs"
+    }
+  ]
+}

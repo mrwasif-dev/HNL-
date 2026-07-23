@@ -1,0 +1,40 @@
+{
+  "name": "hnl-hitech-fsr",
+  "version": "1.0.0",
+  "description": "HNL Hi-Tech (Pvt) Ltd — WhatsApp-connected Field Service Report (FSR) dashboard",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "pm2": "pm2 start ecosystem.config.json",
+    "pm2:stop": "pm2 stop muzammil-md-v3",
+    "pm2:logs": "pm2 logs muzammil-md-v3"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "nodejs"
+  ],
+  "author": "Muzammil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrwasif-dev/Muzammil-MD-V3.git"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.1.3",
+    "pino": "^10.2.0",
+    "qrcode": "^1.5.4"
+  }
+}
