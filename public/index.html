@@ -6,40 +6,39 @@
 <title>HNL Hi-Tech • FSR</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <!-- ============================================================
-     AUTH SCREEN (signup / login)
+     AUTH SCREEN (ERP ID login)
 ============================================================ -->
 <div class="wrap" id="authWrap" style="max-width:400px; padding-top:8vh;">
     <div class="card animate-in">
         <div class="auth-logo">
             <div class="icon"><i class="fas fa-clipboard-list"></i></div>
             <h1>HNL <span>Hi-Tech</span></h1>
-            <p id="authSubtitle">Loading...</p>
+            <p id="authSubtitle">Log in with your ERP ID</p>
         </div>
 
         <div class="auth-error" id="authError"></div>
 
         <form id="authForm">
             <div class="field">
-                <label>Username</label>
-                <input type="text" id="authUsername" placeholder="e.g. muzammil" autocomplete="username" required>
+                <label>ERP ID</label>
+                <input type="text" inputmode="numeric" id="authErpId" placeholder="e.g. 1007015" autocomplete="username" required>
             </div>
             <div class="field">
                 <label>Password</label>
                 <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn btn-primary" id="authSubmitBtn">
-                <i class="fas fa-right-to-bracket"></i> <span id="authSubmitLabel">Login</span>
+                <i class="fas fa-right-to-bracket"></i> <span>Login</span>
             </button>
         </form>
-
-        <div class="auth-toggle" id="authToggle"></div>
     </div>
 </div>
+
 
 <!-- ============================================================
      DASHBOARD (shown after login)
@@ -203,16 +202,22 @@
 
         <div class="card animate-in d5">
             <div class="section-title"><i class="fas fa-boxes-stacked"></i> Other Store Items</div>
-            <p class="hint-text">Anything not listed above — add as many as you need.</p>
+            <p class="hint-text">Anything not listed above — type the name, tap ✓ to add it, then fill in the quantity.</p>
+            <div class="item-add-row">
+                <input type="text" id="manualItemsInput" class="item-add-input" placeholder="Item name">
+                <button type="button" class="tick-btn" onclick="confirmAddItem('manualItemsList','manualItemsInput')"><i class="fas fa-check"></i></button>
+            </div>
             <div class="item-list" id="manualItemsList"></div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow('manualItemsList')"><i class="fas fa-plus"></i> Add Item</button>
         </div>
 
         <div class="card animate-in d5">
             <div class="section-title"><i class="fas fa-screwdriver-wrench"></i> Service Items</div>
             <p class="hint-text">Any service work carried out on this visit.</p>
+            <div class="item-add-row">
+                <input type="text" id="serviceItemsInput" class="item-add-input" placeholder="Service item name">
+                <button type="button" class="tick-btn" onclick="confirmAddItem('serviceItemsList','serviceItemsInput')"><i class="fas fa-check"></i></button>
+            </div>
             <div class="item-list" id="serviceItemsList"></div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow('serviceItemsList')"><i class="fas fa-plus"></i> Add Service Item</button>
         </div>
 
         <button class="btn btn-primary" onclick="submitFsr()" id="fsrSubmitBtn"><i class="fas fa-paper-plane"></i> Submit FSR</button>
@@ -225,8 +230,8 @@
         <div class="card animate-in d1">
             <div class="section-title"><i class="fas fa-user"></i> Signed in as</div>
             <div class="account-row">
-                <div class="account-avatar"><i class="fas fa-user"></i></div>
-                <div class="account-name" id="accountUsername">-</div>
+                <div class="account-avatar"><i class="fas fa-id-badge"></i></div>
+                <div class="account-name" id="accountErpId">-</div>
             </div>
             <button class="btn btn-danger" onclick="dashLogout()"><i class="fas fa-right-from-bracket"></i> Log out</button>
         </div>
@@ -254,6 +259,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/dashboard.js"></script>
+<script src="/app.js"></script>
 </body>
 </html>
