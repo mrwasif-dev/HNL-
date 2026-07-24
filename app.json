@@ -19,11 +19,15 @@
       "required": false
     },
     "MONGODB_URI": {
-      "description": "MongoDB connection string used to store the session, dashboard login and FSR group settings (e.g. from MongoDB Atlas).",
+      "description": "MongoDB connection string used to store the session and FSR group settings (e.g. from MongoDB Atlas).",
       "required": true
     },
-    "COMPANY_NAME": {
-      "description": "Optional. Company name shown at the top of every FSR report. Defaults to \"HNL Hi-Tech (Pvt) Ltd\".",
+    "ERP_IDS": {
+      "description": "Comma-separated list of ERP IDs allowed to log in to the dashboard, e.g. 1007015,1315964. Add more any time.",
+      "required": true
+    },
+    "ERP_PASSWORD": {
+      "description": "Shared password used by every ERP ID above to log in. Defaults to 1234hnl if not set.",
       "required": false
     },
     "FSR_GROUP_JID": {

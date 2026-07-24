@@ -15,25 +15,20 @@ const path = require('path');
 const P = require('pino');
 const QRCode = require('qrcode');
 
-const { muzammil_connectSession, muzammil_clearSession } = require('./muzammillib/session');
+const { muzammil_connectSession, muzammil_clearSession } = require('./session');
 const {
     muzammil_connectDatabase,
     muzammil_isDbConnected,
-    muzammil_countDashUsers,
-    muzammil_getFirstDashUser,
-    muzammil_createDashUser,
-    muzammil_getDashUserByUsername,
     muzammil_getFsrConfig,
     muzammil_saveFsrConfig
-} = require('./muzammillib/database');
+} = require('./database');
 const {
-    hashPassword,
-    verifyPassword,
+    verifyErpCredentials,
     signToken,
     setAuthCookie,
     clearAuthCookie,
     requireAuth
-} = require('./muzammillib/auth');
+} = require('./auth');
 const config = require('./muzammil');
 
 // Time the process actually started - used for a truthful uptime display
@@ -70,14 +65,13 @@ muzammil_app.get('/ping', (req, res) => res.status(200).send('pong'));
 // -----------------------------------------------------------------------------
 // FSR CONFIG CACHE (which WhatsApp group the submitted FSR reports go to)
 // -----------------------------------------------------------------------------
-let fsrConfigCache = null; // { username, groupJid }
+let fsrConfigCache = null; // { groupJid }
 
-async function refreshFsrConfigCache(username) {
+async function refreshFsrConfigCache() {
     try {
-        const cfg = await muzammil_getFsrConfig(username);
+        const cfg = await muzammil_getFsrConfig();
         if (cfg) {
             fsrConfigCache = {
-                username,
                 groupJid: cfg.groupJid || ''
             };
         }
@@ -146,12 +140,10 @@ function buildFsrMessage(payload) {
         ? payload.serviceItems.filter(i => i && i.name && String(i.name).trim())
         : [];
 
-    let msg = `*${config.companyName}*\n*Field Service Report*\n\n`;
-    msg += `👤 Name: ${payload.name}\n`;
-    msg += `📍 Region: ${payload.region}\n`;
-    msg += `📅 Date: ${formatDateReadable(payload.date)}\n\n`;
-    msg += `*Site ID: ${payload.siteId}*\n`;
-    msg += `──────────────\n`;
+    let msg = `👤 *${payload.name}*\n`;
+    msg += `📍 ${payload.region}   •   📅 ${formatDateReadable(payload.date)}\n\n`;
+    msg += `🏷️ *Site ID: ${payload.siteId}*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━\n`;
 
     if (lines.length) {
         msg += lines.join('\n') + '\n';
@@ -169,7 +161,7 @@ function buildFsrMessage(payload) {
         msg += serviceItems.map(i => `${String(i.name).trim()} ,${String(i.qty || '1').trim()}`).join('\n') + '\n';
     }
 
-    msg += `──────────────`;
+    msg += `━━━━━━━━━━━━━━━━━━`;
 
     return msg;
 }
@@ -659,54 +651,28 @@ muzammil_app.get('/api/health', async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// AUTH ROUTES (dashboard login system - separate from the WhatsApp session)
+// AUTH ROUTES (ERP ID + shared password login — no dashboard accounts)
 // -----------------------------------------------------------------------------
 
+// Lets the frontend show a helpful message if no ERP IDs have been
+// configured on the server yet.
 muzammil_app.get('/api/auth/status', async (req, res) => {
-    const count = await muzammil_countDashUsers();
-    res.json({ success: true, setupDone: count > 0 });
-});
-
-muzammil_app.post('/api/auth/signup', async (req, res) => {
-    try {
-        const { username, password } = req.body || {};
-        if (!username || !password || password.length < 4) {
-            return res.status(400).json({ success: false, error: 'Username and a password (4+ chars) are required' });
-        }
-        const existingCount = await muzammil_countDashUsers();
-        if (existingCount > 0) {
-            return res.status(403).json({ success: false, error: 'Setup already completed. Please log in.' });
-        }
-        const passwordHash = await hashPassword(password);
-        const user = await muzammil_createDashUser(username.trim(), passwordHash);
-        const token = signToken({ username: user.username });
-        setAuthCookie(res, token);
-        await refreshFsrConfigCache(user.username);
-        res.json({ success: true, username: user.username });
-    } catch (error) {
-        console.error('Signup error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Signup failed' });
-    }
+    res.json({ success: true, configured: config.erpIds.length > 0 });
 });
 
 muzammil_app.post('/api/auth/login', async (req, res) => {
     try {
-        const { username, password } = req.body || {};
-        if (!username || !password) {
-            return res.status(400).json({ success: false, error: 'Username and password are required' });
+        const { erpId, password } = req.body || {};
+        if (!erpId || !password) {
+            return res.status(400).json({ success: false, error: 'ERP ID and password are required' });
         }
-        const user = await muzammil_getDashUserByUsername(username.trim());
-        if (!user) {
-            return res.status(401).json({ success: false, error: 'Invalid username or password' });
+        if (!verifyErpCredentials(erpId, password)) {
+            return res.status(401).json({ success: false, error: 'Invalid ERP ID or password' });
         }
-        const ok = await verifyPassword(password, user.passwordHash);
-        if (!ok) {
-            return res.status(401).json({ success: false, error: 'Invalid username or password' });
-        }
-        const token = signToken({ username: user.username });
+        const id = String(erpId).trim();
+        const token = signToken({ erpId: id });
         setAuthCookie(res, token);
-        await refreshFsrConfigCache(user.username);
-        res.json({ success: true, username: user.username });
+        res.json({ success: true, erpId: id });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ success: false, error: error.message || 'Login failed' });
@@ -719,7 +685,7 @@ muzammil_app.post('/api/auth/logout', requireAuth, (req, res) => {
 });
 
 muzammil_app.get('/api/auth/me', requireAuth, (req, res) => {
-    res.json({ success: true, username: req.user.username });
+    res.json({ success: true, erpId: req.user.erpId });
 });
 
 // -----------------------------------------------------------------------------
@@ -729,9 +695,9 @@ muzammil_app.get('/api/auth/me', requireAuth, (req, res) => {
 // Which WhatsApp group the FSR reports get sent to.
 muzammil_app.get('/api/fsr/config', requireAuth, async (req, res) => {
     try {
-        const cfg = await muzammil_getFsrConfig(req.user.username);
+        const cfg = await muzammil_getFsrConfig();
         if (!cfg) return res.status(503).json({ success: false, error: 'Database not connected' });
-        res.json({ success: true, config: { groupJid: cfg.groupJid || '' }, companyName: config.companyName });
+        res.json({ success: true, config: { groupJid: cfg.groupJid || '' } });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -743,10 +709,10 @@ muzammil_app.post('/api/fsr/config', requireAuth, async (req, res) => {
         const updates = {};
         if (typeof groupJid === 'string') updates.groupJid = groupJid.trim();
 
-        const ok = await muzammil_saveFsrConfig(req.user.username, updates);
+        const ok = await muzammil_saveFsrConfig(updates);
         if (!ok) return res.status(503).json({ success: false, error: 'Database not connected' });
 
-        await refreshFsrConfigCache(req.user.username);
+        await refreshFsrConfigCache();
         res.json({ success: true });
     } catch (error) {
         console.error('Save FSR config error:', error);
@@ -828,12 +794,12 @@ async function main() {
         const dbResult = await muzammil_connectDatabase(config.mongoDbUrl);
         if (dbResult) {
             console.log('✅ Database connected');
-
-            const admin = await muzammil_getFirstDashUser();
-            if (admin) {
-                await refreshFsrConfigCache(admin.username);
-            }
+            await refreshFsrConfigCache();
         }
+    }
+
+    if (!config.erpIds.length) {
+        console.log('⚠️  No ERP_IDS configured — nobody will be able to log in until you set them.');
     }
 
     const sessionId = getDefaultSessionId();
